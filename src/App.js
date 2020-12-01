@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useReducer } from 'react';
 import './App.css';
 import TodoInsert from './components/TodoInsert';
 import TodoList from './components/TodoList';
@@ -16,15 +16,26 @@ function createBulkTodos() {
   return array
 }
 
+function todoReducer(todos, action) {
+  switch(action.type) {
+    case 'INSERT' : // 새로 추가
+      // {type: 'INSERT', todo : {id:1, text:'todo', checked: false}}
+      return todos.concat(action.todo);
+    case "REMOVE" : // 제거
+      // {type: 'REMOVE', id:1}
+      return todos.filter(todo => todo.id !== action.id);
+    case 'TOGGLE' : // 토글
+       // {type: 'REMOVE', id:1}
+      return todos.map(todo =>
+        todo.id === action.id ? {...todo, checked: !todo.checked} : todo,);
+        default:
+            return todos;
+  }
+}
+
+
 const App = () => {
-  const [todos, setTodos] = useState(
-  //   [
-  //   {id:1, text: '리액트의 기초 알아보기', checked:true},
-  //   {id:2, text: '컴포넌트 스타일링해 보기', checked:true},
-  //   {id:3, text: '일정 관리 앱 만들어 보기', checked:false}
-  // ]
-  createBulkTodos
-  );
+  const [todos, dispatch] = useReducer(todoReducer, undefined,createBulkTodos);
   // 고윳값으로 사용될 id
   // ref를 사용하여 변수 담기
   const nextId = useRef(2501);
@@ -35,7 +46,7 @@ const App = () => {
         text,
         checked: false,
       };
-      setTodos(todos => todos.concat(todo)); // 문자열 합치기
+      dispatch({type: "INSERT", todo});
       nextId.current += 1; //nextId 1씩 더하기
     },
     [],
@@ -43,14 +54,12 @@ const App = () => {
 
 const onRemove = useCallback(
   id=> {
-    setTodos(todos => todos.filter(todo => todo.id !== id));
+    dispatch({type: "REMOVE", id});
   },[]);// id를 파라미터로 받아 와서 같은 id를 가진 항목을 todos 배열에서 지우는 함수
 
 const onToggle = useCallback(
   id => {
-    setTodos(todos =>
-      todos.map(todo => todo.id === id ? {...todo, checked: !todo.checked} : todo)
-    )
+    dispatch({type: "TOGGLE", id});
   }, []
 )
 
